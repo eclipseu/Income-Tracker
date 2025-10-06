@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
+  const { id } = await context.params;
 
   // Get the current user
   const {
@@ -21,7 +22,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("transactions")
       .delete()
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id); // Ensure user can only delete their own transactions
 
     if (error) {

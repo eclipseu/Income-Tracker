@@ -5,16 +5,15 @@ import { MonthlySummary as MonthlySummaryType } from "@/lib/types";
 
 interface MonthlySummaryProps {
   summary: MonthlySummaryType;
+  formatCurrency: (amountInUsd: number) => string;
+  currency: "USD" | "PHP";
 }
 
-export default function MonthlySummary({ summary }: MonthlySummaryProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
+export default function MonthlySummary({
+  summary,
+  formatCurrency,
+  currency,
+}: MonthlySummaryProps) {
   const getProfitColor = (profit: number) => {
     if (profit > 0) return "text-green-600";
     if (profit < 0) return "text-red-600";
@@ -29,9 +28,12 @@ export default function MonthlySummary({ summary }: MonthlySummaryProps) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Monthly Summary
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Monthly Summary</h3>
+        <span className="text-sm text-gray-500 uppercase tracking-wide">
+          {currency}
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Income */}

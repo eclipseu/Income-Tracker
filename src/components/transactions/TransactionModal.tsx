@@ -10,6 +10,9 @@ interface TransactionModalProps {
   onClose: () => void;
   selectedDate: Date;
   transactions: Transaction[];
+  currency: "USD" | "PHP";
+  formatCurrency: (amountInUsd: number) => string;
+  convertToBaseCurrency: (amount: number) => number;
   onAddTransaction: (
     transaction: Omit<
       Transaction,
@@ -24,6 +27,9 @@ export default function TransactionModal({
   onClose,
   selectedDate,
   transactions,
+  currency,
+  formatCurrency,
+  convertToBaseCurrency,
   onAddTransaction,
   onDeleteTransaction,
 }: TransactionModalProps) {
@@ -46,10 +52,17 @@ export default function TransactionModal({
 
     setLoading(true);
     try {
+      const parsedAmount = parseFloat(amount);
+      const baseAmount = convertToBaseCurrency(parsedAmount);
+      const normalizedAmount = Math.round(baseAmount * 100) / 100;
+      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        throw new Error("Invalid amount after currency conversion");
+      }
+
       await onAddTransaction({
         date: formatLocalYMD(selectedDate),
         type,
-        amount: parseFloat(amount),
+        amount: normalizedAmount,
         note: note.trim() || undefined,
       });
       setAmount("");
@@ -128,7 +141,7 @@ export default function TransactionModal({
                 htmlFor="amount"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Amount
+                Amount ({currency})
               </label>
               <input
                 id="amount"
@@ -180,41 +193,49 @@ export default function TransactionModal({
                   No transactions for this day
                 </p>
               ) : (
-                transactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`text-sm font-medium ${
-                            transaction.type === "income"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {transaction.type === "income" ? "+" : "-"}$
-                          {transaction.amount.toFixed(2)}
-                        </span>
-                        {transaction.note && (
-                          <span className="text-sm text-gray-600 truncate">
-                            {transaction.note}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(transaction.created_at).toLocaleTimeString()}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(transaction.id)}
-                      className="text-red-600 hover:text-red-800 text-sm"
+                transactions.map((transaction) => {
+                  const displayAmount =
+                    transaction.type === "income"
+                      ? `+${formatCurrency(transaction.amount)}`
+                      : formatCurrency(-transaction.amount);
+
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                     >
-                      Delete
-                    </button>
-                  </div>
-                ))
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`text-sm font-medium ${
+                              transaction.type === "income"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {displayAmount}
+                          </span>
+                          {transaction.note && (
+                            <span className="text-sm text-gray-600 truncate">
+                              {transaction.note}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(
+                            transaction.created_at
+                          ).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(transaction.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

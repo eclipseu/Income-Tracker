@@ -21,6 +21,8 @@ interface CalendarProps {
   onDateClick: (date: Date) => void;
   month: Date; // controlled month from parent
   onMonthChange: (date: Date) => void; // notify parent on prev/next
+  formatCurrency: (amountInUsd: number) => string;
+  currency: "USD" | "PHP";
 }
 
 export default function Calendar({
@@ -28,6 +30,8 @@ export default function Calendar({
   onDateClick,
   month,
   onMonthChange,
+  formatCurrency,
+  currency,
 }: CalendarProps) {
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
@@ -39,13 +43,6 @@ export default function Calendar({
   const getDailyTotal = (date: Date): DailyTotal | undefined => {
     const ymd = formatLocalYMD(date);
     return dailyTotals.find((total) => total.date === ymd);
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   const getAmountColor = (amount: number) => {
@@ -69,6 +66,9 @@ export default function Calendar({
         <h2 className="text-xl font-semibold text-gray-900">
           {format(month, "MMMM yyyy")}
         </h2>
+        <span className="text-sm text-gray-500 uppercase tracking-wide">
+          {currency}
+        </span>
         <button
           onClick={nextMonth}
           className="p-2 hover:bg-gray-100 rounded-md"
@@ -113,7 +113,7 @@ export default function Calendar({
                         dailyTotal.net_total
                       )}`}
                     >
-                      {formatAmount(dailyTotal.net_total)}
+                      {formatCurrency(dailyTotal.net_total)}
                     </div>
                     {dailyTotal.transaction_count > 0 && (
                       <div className="text-xs text-gray-500">
