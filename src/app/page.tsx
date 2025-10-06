@@ -1,103 +1,241 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Download } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import Calendar from "@/components/calendar/Calendar";
+import TransactionModal from "@/components/transactions/TransactionModal";
+import MonthlySummary from "@/components/summary/MonthlySummary";
+import AuthButton from "@/components/auth/AuthButton";
+import {
+  Transaction,
+  DailyTotal,
+  MonthlySummary as MonthlySummaryType,
+} from "@/lib/types";
+
+export default function Dashboard() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
+  const [monthlySummary, setMonthlySummary] =
+    useState<MonthlySummaryType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+  const supabase = createClient();
+
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+
+  // Check authentication
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/landing");
+      } else {
+        setUser(user);
+      }
+    };
+    checkUser();
+  }, [router, supabase.auth]);
+
+  // Fetch data for the current month
+  const fetchData = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      // Fetch transactions
+      const transactionsResponse = await fetch(
+        `/api/transactions?month=${currentMonth}&year=${currentYear}`
+      );
+      const { transactions: fetchedTransactions } =
+        await transactionsResponse.json();
+      setTransactions(fetchedTransactions || []);
+
+      // Fetch daily totals
+      const dailyTotalsResponse = await fetch(
+        `/api/daily-totals?month=${currentMonth}&year=${currentYear}`
+      );
+      const { dailyTotals: fetchedDailyTotals } =
+        await dailyTotalsResponse.json();
+      setDailyTotals(fetchedDailyTotals || []);
+
+      // Fetch monthly summary
+      const summaryResponse = await fetch(
+        `/api/summary?month=${currentMonth}&year=${currentYear}`
+      );
+      const { summary } = await summaryResponse.json();
+      setMonthlySummary(summary);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [currentDate, user]);
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleAddTransaction = async (
+    transactionData: Omit<
+      Transaction,
+      "id" | "user_id" | "created_at" | "updated_at"
+    >
+  ) => {
+    try {
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(transactionData),
+      });
+
+      if (response.ok) {
+        // Refresh data
+        await fetchData();
+      } else {
+        throw new Error("Failed to add transaction");
+      }
+    } catch (error) {
+      console.error("Error adding transaction:", error);
+      throw error;
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Refresh data
+        await fetchData();
+      } else {
+        throw new Error("Failed to delete transaction");
+      }
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      throw error;
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch(
+        `/api/export?month=${currentMonth}&year=${currentYear}`
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `income-tracker-${format(currentDate, "MMMM-yyyy")}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        throw new Error("Failed to export CSV");
+      }
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+    }
+  };
+
+  const getTransactionsForDate = (date: Date) => {
+    const dateString = date.toISOString().split("T")[0];
+    return transactions.filter((t) => t.date === dateString);
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Income Tracker
+              </h1>
+              <p className="text-gray-600">
+                Track your daily income and expenses
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </button>
+              <AuthButton />
+            </div>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8">
+          {/* Monthly Summary */}
+          {monthlySummary && <MonthlySummary summary={monthlySummary} />}
+
+          {/* Calendar */}
+          <Calendar dailyTotals={dailyTotals} onDateClick={handleDateClick} />
+
+          {/* Transaction Modal */}
+          {selectedDate && (
+            <TransactionModal
+              isOpen={!!selectedDate}
+              onClose={() => setSelectedDate(null)}
+              selectedDate={selectedDate}
+              transactions={getTransactionsForDate(selectedDate)}
+              onAddTransaction={handleAddTransaction}
+              onDeleteTransaction={handleDeleteTransaction}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
