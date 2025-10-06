@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { Transaction } from "@/lib/types";
+import { formatLocalYMD } from "@/lib/date";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export default function TransactionModal({
     setLoading(true);
     try {
       await onAddTransaction({
-        date: selectedDate.toISOString().split("T")[0],
+        date: formatLocalYMD(selectedDate),
         type,
         amount: parseFloat(amount),
         note: note.trim() || undefined,

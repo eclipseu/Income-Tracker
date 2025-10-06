@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   format,
   startOfMonth,
@@ -15,24 +14,31 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DailyTotal } from "@/lib/types";
+import { formatLocalYMD } from "@/lib/date";
 
 interface CalendarProps {
   dailyTotals: DailyTotal[];
   onDateClick: (date: Date) => void;
+  month: Date; // controlled month from parent
+  onMonthChange: (date: Date) => void; // notify parent on prev/next
 }
 
-export default function Calendar({ dailyTotals, onDateClick }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+export default function Calendar({
+  dailyTotals,
+  onDateClick,
+  month,
+  onMonthChange,
+}: CalendarProps) {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
 
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
   const getDailyTotal = (date: Date): DailyTotal | undefined => {
-    return dailyTotals.find((total) => isSameDay(new Date(total.date), date));
+    const ymd = formatLocalYMD(date);
+    return dailyTotals.find((total) => total.date === ymd);
   };
 
   const formatAmount = (amount: number) => {
@@ -48,13 +54,8 @@ export default function Calendar({ dailyTotals, onDateClick }: CalendarProps) {
     return "text-gray-500";
   };
 
-  const nextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-
-  const prevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
+  const nextMonth = () => onMonthChange(addMonths(month, 1));
+  const prevMonth = () => onMonthChange(subMonths(month, 1));
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -66,7 +67,7 @@ export default function Calendar({ dailyTotals, onDateClick }: CalendarProps) {
           <ChevronLeft className="h-5 w-5" />
         </button>
         <h2 className="text-xl font-semibold text-gray-900">
-          {format(currentMonth, "MMMM yyyy")}
+          {format(month, "MMMM yyyy")}
         </h2>
         <button
           onClick={nextMonth}
@@ -88,9 +89,9 @@ export default function Calendar({ dailyTotals, onDateClick }: CalendarProps) {
         ))}
 
         {/* Calendar days */}
-        {calendarDays.map((day, dayIdx) => {
+        {calendarDays.map((day) => {
           const dailyTotal = getDailyTotal(day);
-          const isCurrentMonth = isSameMonth(day, currentMonth);
+          const isCurrentMonth = isSameMonth(day, month);
           const isToday = isSameDay(day, new Date());
 
           return (

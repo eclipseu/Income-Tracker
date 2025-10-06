@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { formatLocalYMD } from "@/lib/date";
 import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -87,6 +88,13 @@ export default function Dashboard() {
   }, [currentDate, user]);
 
   const handleDateClick = (date: Date) => {
+    // If user clicks a day from an adjacent month, also set currentDate to that day to switch month
+    if (
+      date.getMonth() !== currentDate.getMonth() ||
+      date.getFullYear() !== currentDate.getFullYear()
+    ) {
+      setCurrentDate(date);
+    }
     setSelectedDate(date);
   };
 
@@ -160,7 +168,7 @@ export default function Dashboard() {
   };
 
   const getTransactionsForDate = (date: Date) => {
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = formatLocalYMD(date);
     return transactions.filter((t) => t.date === dateString);
   };
 
@@ -221,7 +229,12 @@ export default function Dashboard() {
           {monthlySummary && <MonthlySummary summary={monthlySummary} />}
 
           {/* Calendar */}
-          <Calendar dailyTotals={dailyTotals} onDateClick={handleDateClick} />
+          <Calendar
+            dailyTotals={dailyTotals}
+            onDateClick={handleDateClick}
+            month={currentDate}
+            onMonthChange={(d) => setCurrentDate(d)}
+          />
 
           {/* Transaction Modal */}
           {selectedDate && (

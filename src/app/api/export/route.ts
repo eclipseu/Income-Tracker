@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatLocalYMD } from "@/lib/date";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -34,8 +35,8 @@ export async function GET(request: NextRequest) {
       .from("transactions")
       .select("*")
       .eq("user_id", user.id)
-      .gte("date", startDate.toISOString().split("T")[0])
-      .lte("date", endDate.toISOString().split("T")[0])
+      .gte("date", formatLocalYMD(startDate))
+      .lte("date", formatLocalYMD(endDate))
       .order("date", { ascending: true });
 
     if (error) {
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
     const csvRows =
       transactions
         ?.map((transaction) => {
-          const date = new Date(transaction.date).toLocaleDateString();
+          // transaction.date is stored as DATE (no time); use as-is to avoid UTC shifts
+          const date = transaction.date as string;
           const timestamp = new Date(transaction.created_at).toLocaleString();
           const note = transaction.note
             ? `"${transaction.note.replace(/"/g, '""')}"`
