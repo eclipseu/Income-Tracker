@@ -105,7 +105,7 @@ export default function Dashboard() {
       } = await supabase.auth.getUser();
       if (!user) {
         setBootstrapping(false);
-        router.replace("/landing");
+        router.replace("/login");
         return;
       }
       setUser(user);
@@ -134,7 +134,7 @@ export default function Dashboard() {
         setIsUserMenuOpen(false);
         setLoading(false);
         setBootstrapping(false);
-        router.replace("/landing");
+        router.replace("/login");
         router.refresh();
       }
     });
@@ -239,7 +239,7 @@ export default function Dashboard() {
     if (user) {
       fetchData();
     }
-  }, [currentDate, user]);
+  }, [currentDate, user?.id]);
 
   const handleDateClick = (date: Date) => {
     // If user clicks a day from an adjacent month, also set currentDate to that day to switch month
@@ -447,13 +447,6 @@ export default function Dashboard() {
                   )
                 )}
               </ul>
-            </div>
-            <div className="mt-auto px-6 pt-8 text-xs text-[#1B2A38]/60">
-              <p className="font-medium">Need help?</p>
-              <p className="mt-1 leading-relaxed">
-                Visit the reports section to understand your monthly cash flow
-                patterns.
-              </p>
             </div>
           </nav>
         </aside>

@@ -42,7 +42,7 @@ export default function Calendar({
 
   const getPillClasses = (amount: number) => {
     if (amount > 0) {
-      return "bg-[#17A2B8]/15 text-[#0B1B2B]";
+      return "bg-[#17A2B8]/15 text-[#00c700]";
     }
     if (amount < 0) {
       return "bg-[#FF6B6B]/15 text-[#FF6B6B]";
@@ -107,7 +107,7 @@ export default function Calendar({
                 <p
                   className={`text-sm font-semibold ${
                     netAmount > 0
-                      ? "text-[#17A2B8]"
+                      ? "text-[#00c700]"
                       : netAmount < 0
                       ? "text-[#FF6B6B]"
                       : "text-[#1B2A38]/60"

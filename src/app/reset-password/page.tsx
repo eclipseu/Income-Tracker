@@ -1,5 +1,8 @@
 import ResetPasswordCard from "@/components/auth/ResetPasswordCard";
+import { redirectIfAuthenticated } from "@/lib/supabase/redirects";
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage() {
+  await redirectIfAuthenticated();
+
   return <ResetPasswordCard />;
 }

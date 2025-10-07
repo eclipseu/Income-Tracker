@@ -12,6 +12,26 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsZmVkaml3cXZ1anppaHdhbWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MjU1MzUsImV4cCI6MjA3NTMwMTUzNX0.aIEMItTDI6eiKxSRA4H_QEzHsvRQi6WX3KyYJN3Uwd0";
 
+const PROTECTED_PATHS = ["/dashboard"];
+const PUBLIC_ONLY_PATHS = [
+  "/",
+  "/landing",
+  "/login",
+  "/signup",
+  "/confirm-email",
+  "/reset-password",
+  "/design-system",
+  "/setup-required",
+];
+
+function matchesPath(pathname: string, candidate: string) {
+  if (candidate === "/") {
+    return pathname === "/";
+  }
+
+  return pathname === candidate || pathname.startsWith(`${candidate}/`);
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -61,24 +81,44 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    sessionResult,
+  ] = await Promise.all([supabase.auth.getUser(), supabase.auth.getSession()]);
 
-  const protectedPaths = [
-    "/dashboard",
-    "/drills",
-    "/practice",
-    "/advocacy",
-    "/mock",
-    "/user",
-  ];
-  const isProtectedPath = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
+  const pathname = request.nextUrl.pathname.replace(/\/$/, "") || "/";
+  const isProtectedPath = PROTECTED_PATHS.some((path) =>
+    matchesPath(pathname, path)
+  );
+  const isPublicOnlyPath = PUBLIC_ONLY_PATHS.some((path) =>
+    matchesPath(pathname, path)
   );
 
+  const copyCookiesTo = (target: NextResponse) => {
+    for (const cookie of response.cookies.getAll()) {
+      target.cookies.set(cookie);
+    }
+    return target;
+  };
+
   if (!user && isProtectedPath) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const redirectResponse = NextResponse.redirect(
+      new URL("/login", request.url)
+    );
+    return copyCookiesTo(redirectResponse);
+  }
+
+  if (user && isPublicOnlyPath) {
+    const redirectResponse = NextResponse.redirect(
+      new URL("/dashboard", request.url)
+    );
+    return copyCookiesTo(redirectResponse);
+  }
+
+  if (sessionResult.error) {
+    return response;
   }
 
   return response;
@@ -91,9 +131,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - /login
-     * - /auth
      */
-    "/((?!_next/static|_next/image|favicon.ico|login|auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

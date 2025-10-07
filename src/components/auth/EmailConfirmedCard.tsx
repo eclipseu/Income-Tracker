@@ -246,10 +246,7 @@ export default function EmailConfirmedCard() {
         <FloatingLogo />
         {renderContent()}
         <footer className="mt-8 text-center text-xs text-white/60">
-          <p>
-            Need help?{" "}
-            <span className="font-semibold text-white">Contact support</span>.
-          </p>
+          <p></p>
         </footer>
       </div>
     </div>
