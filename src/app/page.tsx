@@ -43,15 +43,12 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const navigationItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "#", isActive: true },
     { label: "Calendar", icon: CalendarDays, href: "#calendar" },
-    { label: "Reports", icon: BarChart3, href: "#reports" },
-    { label: "Export", icon: FileDown, href: "#export" },
-    { label: "Settings", icon: Settings, href: "#settings" },
   ];
 
   useEffect(() => {
@@ -105,13 +102,39 @@ export default function Dashboard() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/landing");
+        router.replace("/login");
       } else {
         setUser(user);
       }
     };
     checkUser();
-  }, [router, supabase.auth]);
+  }, [router, supabase]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        return;
+      }
+
+      if (event === "SIGNED_OUT" || !session?.user) {
+        setUser(null);
+        setTransactions([]);
+        setDailyTotals([]);
+        setMonthlySummary(null);
+        setSelectedDate(null);
+        setIsSidebarOpen(false);
+        setIsUserMenuOpen(false);
+        setLoading(false);
+        router.replace("/login");
+        router.refresh();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
 
   // Fetch exchange rate for USD to PHP once
   useEffect(() => {
@@ -339,7 +362,7 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-semibold tracking-tight">
-                  IncomeTracker
+                  BrokeNoMo
                 </span>
                 <span className="hidden rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.25em] text-white/80 sm:inline-flex">
                   Secure

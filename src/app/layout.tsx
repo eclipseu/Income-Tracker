@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Income Tracker",
-  description: "Track your daily income and expenses",
+export const metadata = {
+  title: "BrokeNoMo",
+  description: "Track your money, stay broke no more!",
+  icons: {
+    icon: "/logo.jpg", // put your logo in /public
+  },
 };
 
 export default function RootLayout({
