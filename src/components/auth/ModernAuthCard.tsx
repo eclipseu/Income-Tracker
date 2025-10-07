@@ -81,7 +81,7 @@ export default function ModernAuthCard({
       }
 
       startTransition(() => {
-        router.push("/");
+        router.push("/dashboard");
         router.refresh();
       });
       setLoading(false);
