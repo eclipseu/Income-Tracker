@@ -840,7 +840,14 @@ function PiggyAnimation() {
       />
 
       <g clipPath="url(#pigClip)">
-        <rect x="42" y="150" width="172" height="78" fill="#18A16E" opacity="0.15">
+        <rect
+          x="42"
+          y="150"
+          width="172"
+          height="78"
+          fill="#18A16E"
+          opacity="0.15"
+        >
           <animate
             attributeName="y"
             values="160;110;130;160"
@@ -889,11 +896,25 @@ function PiggyAnimation() {
       <circle cx="50" cy="106" r="6" fill="#FF7EAB" />
 
       <g>
-        <rect x="112" y="58" width="32" height="14" rx="6" fill="#0B3F24" opacity="0.9" />
+        <rect
+          x="112"
+          y="58"
+          width="32"
+          height="14"
+          rx="6"
+          fill="#0B3F24"
+          opacity="0.9"
+        />
       </g>
 
       <g>
-        <circle cx="128" cy="44" r="18" fill="url(#coinGradient)" opacity="0.95">
+        <circle
+          cx="128"
+          cy="44"
+          r="18"
+          fill="url(#coinGradient)"
+          opacity="0.95"
+        >
           <animateTransform
             attributeName="transform"
             type="translate"
