@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import { format, addMonths, subMonths } from "date-fns";
 import { formatLocalYMD } from "@/lib/date";
 import {
@@ -8,6 +9,7 @@ import {
   Menu,
   LayoutDashboard,
   CalendarDays,
+  UserSquare2,
   BarChart3,
   FileDown,
   Settings,
@@ -48,8 +50,24 @@ export default function Dashboard() {
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const navigationItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "#", isActive: true },
-    { label: "Calendar", icon: CalendarDays, href: "#calendar" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard",
+      isActive: true,
+    },
+    {
+      label: "Calendar",
+      icon: CalendarDays,
+      href: "#calendar",
+      isActive: false,
+    },
+    {
+      label: "Inventory",
+      icon: UserSquare2,
+      href: "/dashboard/inventory",
+      isActive: false,
+    },
   ];
 
   useEffect(() => {
@@ -428,23 +446,36 @@ export default function Dashboard() {
               </p>
               <ul className="mt-4 space-y-1">
                 {navigationItems.map(
-                  ({ label, icon: Icon, href, isActive }) => (
-                    <li key={label}>
-                      <a
-                        href={href}
-                        className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                          isActive
-                            ? "bg-[#0B1B2B] text-white shadow-[0_10px_30px_-15px_rgba(11,27,43,0.6)]"
-                            : "text-[#1B2A38]/70 hover:bg-white hover:text-[#0B1B2B]"
-                        }`}
-                      >
+                  ({ label, icon: Icon, href, isActive }) => {
+                    const sharedClasses = `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-[#0B1B2B] text-white shadow-[0_10px_30px_-15px_rgba(11,27,43,0.6)]"
+                        : "text-[#1B2A38]/70 hover:bg-white hover:text-[#0B1B2B]"
+                    }`;
+
+                    const content = (
+                      <>
                         <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/20 text-[#17A2B8] transition group-hover:bg-[#17A2B8]/10 group-hover:text-[#17A2B8]">
                           <Icon className="h-4 w-4" strokeWidth={2.5} />
                         </span>
                         {label}
-                      </a>
-                    </li>
-                  )
+                      </>
+                    );
+
+                    return (
+                      <li key={label}>
+                        {href.startsWith("#") ? (
+                          <a href={href} className={sharedClasses}>
+                            {content}
+                          </a>
+                        ) : (
+                          <Link href={href} className={sharedClasses}>
+                            {content}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  }
                 )}
               </ul>
             </div>
