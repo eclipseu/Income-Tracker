@@ -18,8 +18,6 @@ const PUBLIC_ONLY_PATHS = [
   "/landing",
   "/login",
   "/signup",
-  "/confirm-email",
-  "/reset-password",
   "/design-system",
   "/setup-required",
 ];
