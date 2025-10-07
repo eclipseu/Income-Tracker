@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "BrokeNoMo",
-  description: "Track your money, stay broke no more!",
-  icons: {
-    icon: "/logo.jpg", // put your logo in /public
-  },
-};
+  title: "Income Tracker",
+  description: "Track your daily income and expenses",
+} satisfies Metadata;
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="antialiased">{children}</body>

@@ -34,7 +34,8 @@ export default function Dashboard() {
   const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
   const [monthlySummary, setMonthlySummary] =
     useState<MonthlySummaryType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [currency, setCurrency] = useState<"USD" | "PHP">("USD");
   const [usdToPhpRate, setUsdToPhpRate] = useState<number | null>(null);
@@ -98,14 +99,17 @@ export default function Dashboard() {
   // Check authentication
   useEffect(() => {
     const checkUser = async () => {
+      setBootstrapping(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        router.replace("/login");
-      } else {
-        setUser(user);
+        setBootstrapping(false);
+        router.replace("/landing");
+        return;
       }
+      setUser(user);
+      setBootstrapping(false);
     };
     checkUser();
   }, [router, supabase]);
@@ -116,6 +120,7 @@ export default function Dashboard() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
+        setBootstrapping(false);
         return;
       }
 
@@ -128,7 +133,8 @@ export default function Dashboard() {
         setIsSidebarOpen(false);
         setIsUserMenuOpen(false);
         setLoading(false);
-        router.replace("/login");
+        setBootstrapping(false);
+        router.replace("/landing");
         router.refresh();
       }
     });
@@ -323,26 +329,16 @@ export default function Dashboard() {
     return transactions.filter((t) => t.date === dateString);
   };
 
+  if (bootstrapping) {
+    return <LoadingScreen message="Getting your secure session ready…" />;
+  }
+
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Balancing your latest money moves…" />;
   }
 
   return (
@@ -603,5 +599,378 @@ export default function Dashboard() {
         />
       )}
     </div>
+  );
+}
+
+function LoadingScreen({ message }: { message: string }) {
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-white via-[#F5FFF7] to-[#E8FDF4] px-6 py-16 text-[#163D2C]">
+      <div className="pointer-events-none absolute inset-0">
+        <span className="bnm-floating-coin coin-one" />
+        <span className="bnm-floating-coin coin-two" />
+        <span className="bnm-floating-coin coin-three" />
+        <span className="bnm-floating-bill bill-one" />
+        <span className="bnm-floating-bill bill-two" />
+      </div>
+
+      <div className="relative flex w-full max-w-md flex-col items-center gap-8 rounded-[36px] border border-white/60 bg-white/80 p-10 text-center shadow-[0_35px_120px_-40px_rgba(22,61,44,0.45)] backdrop-blur-2xl">
+        <div className="relative flex h-48 w-48 items-center justify-center">
+          <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-[#DFF9E7] via-transparent to-transparent blur-3xl" />
+          <PiggyAnimation />
+          <span className="bnm-pig-sparkle" />
+          <span className="bnm-pig-sparkle delay" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-3xl font-black tracking-tight text-[#163D2C] sm:text-4xl">
+            BrokeNoMo
+          </p>
+          <p className="text-sm text-[#1B2A38]/70 sm:text-base">{message}</p>
+        </div>
+        <div className="relative h-3 w-full max-w-xs overflow-hidden rounded-full bg-[#E9F7EE]">
+          <span className="bnm-progress" />
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes bnmCoinDrop {
+          0% {
+            transform: translate(-50%, -160%) scale(0.8) rotate(-12deg);
+            opacity: 0;
+          }
+          25% {
+            opacity: 1;
+          }
+          55% {
+            transform: translate(-50%, -10%) scale(1) rotate(4deg);
+          }
+          70% {
+            transform: translate(-50%, 10%) scale(1) rotate(-2deg);
+          }
+          100% {
+            transform: translate(-50%, -160%) scale(0.8) rotate(-12deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes bnmFloat {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-16px) rotate(6deg);
+          }
+        }
+
+        @keyframes bnmDrift {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0) rotate(-4deg);
+          }
+          50% {
+            transform: translate3d(12px, -14px, 0) rotate(4deg);
+          }
+        }
+
+        @keyframes bnmSparkle {
+          0% {
+            opacity: 0;
+            transform: scale(0.4) translate(-50%, -50%);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1) translate(-50%, -50%);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.2) translate(-50%, -50%);
+          }
+        }
+
+        @keyframes bnmProgress {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        .bnm-floating-coin {
+          position: absolute;
+          display: block;
+          width: 74px;
+          height: 74px;
+          border-radius: 999px;
+          background: radial-gradient(
+            circle at 30% 30%,
+            #ffeeb3 0%,
+            #f3c744 45%,
+            #b98909 100%
+          );
+          opacity: 0.65;
+          filter: drop-shadow(0 12px 24px rgba(185, 137, 9, 0.25));
+          animation: bnmFloat 6s ease-in-out infinite;
+        }
+
+        .coin-one {
+          top: 12%;
+          left: 16%;
+          animation-delay: -1.2s;
+        }
+
+        .coin-two {
+          bottom: 18%;
+          right: 8%;
+          animation-delay: -2.4s;
+        }
+
+        .coin-three {
+          top: 35%;
+          right: 20%;
+          animation-delay: -3.4s;
+        }
+
+        .bnm-floating-bill {
+          position: absolute;
+          display: block;
+          width: 120px;
+          height: 52px;
+          border-radius: 18px;
+          background: linear-gradient(
+            120deg,
+            #d1f7d8 0%,
+            #8fd9a8 60%,
+            #3cae6f 100%
+          );
+          opacity: 0.35;
+          filter: blur(0.6px);
+          animation: bnmDrift 7.5s ease-in-out infinite;
+        }
+
+        .bill-one {
+          top: 22%;
+          right: 54%;
+          animation-delay: -0.8s;
+        }
+
+        .bill-two {
+          bottom: 12%;
+          left: 8%;
+          animation-delay: -2.1s;
+        }
+
+        .bnm-pig-sparkle,
+        .bnm-pig-sparkle.delay {
+          position: absolute;
+          top: 55%;
+          left: 52%;
+          width: 70px;
+          height: 70px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.7) 0%,
+            rgba(255, 255, 255, 0) 70%
+          );
+          animation: bnmSparkle 2.8s ease-in-out infinite;
+        }
+
+        .bnm-pig-sparkle.delay {
+          animation-delay: -1.4s;
+        }
+
+        .bnm-progress {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            90deg,
+            rgba(24, 161, 110, 0),
+            #18a16e,
+            rgba(88, 209, 151, 0)
+          );
+          animation: bnmProgress 1.8s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function PiggyAnimation() {
+  return (
+    <svg
+      viewBox="0 0 240 220"
+      className="h-48 w-48"
+      role="img"
+      aria-label="Animated piggy bank loading"
+    >
+      <defs>
+        <linearGradient
+          id="pigBodyGradient"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
+          <stop offset="0%" stopColor="#FF9BC2" />
+          <stop offset="100%" stopColor="#FF6D9E" />
+        </linearGradient>
+        <linearGradient id="pigHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FFE6F0" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#FFB9D3" stopOpacity="0.1" />
+        </linearGradient>
+        <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFF4C5" />
+          <stop offset="45%" stopColor="#FFD76B" />
+          <stop offset="100%" stopColor="#C9980F" />
+        </linearGradient>
+        <clipPath id="pigClip">
+          <ellipse cx="128" cy="122" rx="86" ry="64" />
+        </clipPath>
+      </defs>
+
+      <ellipse cx="128" cy="122" rx="86" ry="64" fill="url(#pigBodyGradient)" />
+      <ellipse
+        cx="128"
+        cy="122"
+        rx="86"
+        ry="64"
+        fill="url(#pigHighlight)"
+        opacity="0.35"
+      />
+
+      <g clipPath="url(#pigClip)">
+        <rect
+          x="42"
+          y="150"
+          width="172"
+          height="78"
+          fill="#18A16E"
+          opacity="0.15"
+        >
+          <animate
+            attributeName="y"
+            values="160;110;130;160"
+            dur="3.2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="height"
+            values="60;100;80;60"
+            dur="3.2s"
+            repeatCount="indefinite"
+          />
+        </rect>
+      </g>
+
+      <path
+        d="M58 108C50 80 68 58 94 50C100 30 126 20 152 28C186 20 214 48 210 86C228 96 230 132 208 144C206 170 164 190 122 188C94 196 70 182 64 158C40 158 28 134 44 116C42 104 48 96 58 108Z"
+        fill="none"
+        stroke="#D85688"
+        strokeWidth="6"
+        strokeLinecap="round"
+        opacity="0.25"
+      />
+
+      <path d="M74 66L94 42C104 38 112 46 108 54L90 74" fill="#FF7EAB" />
+      <circle cx="192" cy="118" r="22" fill="#FF7EAB" />
+      <ellipse cx="198" cy="120" rx="10" ry="6" fill="#FFAAC6" opacity="0.75" />
+
+      <ellipse cx="160" cy="122" rx="6" ry="8" fill="#2D0E1B" opacity="0.85" />
+      <ellipse cx="136" cy="114" rx="4" ry="5" fill="#2D0E1B" opacity="0.7" />
+
+      <path
+        d="M86 150C86 140 96 134 122 134C148 134 158 140 158 150"
+        stroke="#2D0E1B"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M46 144C36 136 34 116 44 110"
+        stroke="#FF9BC2"
+        strokeWidth="5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="50" cy="106" r="6" fill="#FF7EAB" />
+
+      <g>
+        <rect
+          x="112"
+          y="58"
+          width="32"
+          height="14"
+          rx="6"
+          fill="#0B3F24"
+          opacity="0.9"
+        />
+      </g>
+
+      <g>
+        <circle
+          cx="128"
+          cy="44"
+          r="18"
+          fill="url(#coinGradient)"
+          opacity="0.95"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 -80; 0 10; 0 -80"
+            keyTimes="0;0.6;1"
+            dur="2.6s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle cx="128" cy="44" r="10" fill="#FEE08B" opacity="0.8">
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 -80; 0 10; 0 -80"
+            keyTimes="0;0.6;1"
+            dur="2.6s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </g>
+
+      <g>
+        <circle cx="170" cy="62" r="12" fill="url(#coinGradient)" opacity="0.8">
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 -50; 0 40; 0 -50"
+            keyTimes="0;0.7;1"
+            dur="3s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </g>
+
+      <g>
+        <circle cx="88" cy="62" r="10" fill="url(#coinGradient)" opacity="0.7">
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 -60; 0 30; 0 -60"
+            keyTimes="0;0.65;1"
+            dur="2.8s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </g>
+
+      <g>
+        <path
+          d="M198 160C206 154 214 160 214 168C214 178 202 182 196 176"
+          stroke="#FF7EAB"
+          strokeWidth="5"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </g>
+    </svg>
   );
 }

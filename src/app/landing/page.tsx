@@ -115,8 +115,8 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-white/70">
-                  {"SMTWTFS".split("").map((day) => (
-                    <span key={day}>{day}</span>
+                  {"SMTWTFS".split("").map((day, index) => (
+                    <span key={`${day}-${index}`}>{day}</span>
                   ))}
                   {[...Array(28)].map((_, index) => (
                     <div
