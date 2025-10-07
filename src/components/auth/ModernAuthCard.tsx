@@ -43,7 +43,7 @@ export default function ModernAuthCard({
     if (forgotStatus === "sent") {
       setForgotStatus("idle");
     }
-  }, [email]);
+  }, [email, forgotStatus]);
 
   const resetMessages = () => {
     setError("");

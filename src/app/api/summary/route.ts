@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ summary });
   } catch (error) {
+    console.error("/api/summary failed", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

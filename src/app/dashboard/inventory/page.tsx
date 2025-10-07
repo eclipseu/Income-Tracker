@@ -16,6 +16,7 @@ import {
   SortAsc,
   SortDesc,
 } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 import AuthButton from "@/components/auth/AuthButton";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -77,7 +78,7 @@ const formatDisplayDate = (value: string | null | undefined) => {
 export default function InventoryByUserPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);

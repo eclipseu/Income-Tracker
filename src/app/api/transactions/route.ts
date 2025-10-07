@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ transactions });
   } catch (error) {
+    console.error("/api/transactions GET failed", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ transaction });
   } catch (error) {
+    console.error("/api/transactions POST failed", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

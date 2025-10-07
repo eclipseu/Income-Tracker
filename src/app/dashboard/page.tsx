@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { format, addMonths, subMonths } from "date-fns";
 import { formatLocalYMD } from "@/lib/date";
@@ -10,9 +10,6 @@ import {
   LayoutDashboard,
   CalendarDays,
   UserSquare2,
-  BarChart3,
-  FileDown,
-  Settings,
   User2,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +25,7 @@ import {
   DailyTotal,
   MonthlySummary as MonthlySummaryType,
 } from "@/lib/types";
+import type { User } from "@supabase/supabase-js";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -38,7 +36,7 @@ export default function Dashboard() {
     useState<MonthlySummaryType | null>(null);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [currency, setCurrency] = useState<"USD" | "PHP">("USD");
   const [usdToPhpRate, setUsdToPhpRate] = useState<number | null>(null);
   const [rateLoading, setRateLoading] = useState(false);
@@ -219,7 +217,7 @@ export default function Dashboard() {
   }, [currency, usdToPhpRate]);
 
   // Fetch data for the current month
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -251,13 +249,13 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentMonth, currentYear, user]);
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [currentDate, user?.id]);
+  }, [fetchData, user]);
 
   const handleDateClick = (date: Date) => {
     // If user clicks a day from an adjacent month, also set currentDate to that day to switch month
